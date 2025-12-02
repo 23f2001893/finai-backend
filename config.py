@@ -7,5 +7,5 @@ class Config():
 class LocalDevelopmentConfig(Config):
     DEBUG=True
     password = quote("Lalit@1234", safe="")
-    SQLALCHEMY_DATABASE_URI=f"postgresql://postgres:{password}@db.nedijqzlukcegqpqgbsg.supabase.co:5432/postgres"
+    SQLALCHEMY_DATABASE_URI=f"postgresql://postgres.nedijqzlukcegqpqgbsg:{password}@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
     JWT_SECRET_KEY="this-is-a-secret-key"
