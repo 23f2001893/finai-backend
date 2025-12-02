@@ -3,5 +3,5 @@ class Config():
     SQLALCHEMY_TRACK_MODIFICATION=False
 class LocalDevelopmentConfig(Config):
     DEBUG=True
-    SQLALCHEMY_DATABASE_URI="postgresql://finai_db_yj7o_user:OQYIxeHizzd7upmgWfl3pAeuk1BVB67p@dpg-d3scecodl3ps73da09cg-a.oregon-postgres.render.com/finai_db_yj7o"
+    SQLALCHEMY_DATABASE_URI="postgresql://postgres:Lalit@1234@db.nedijqzlukcegqpqgbsg.supabase.co:5432/postgres"
     JWT_SECRET_KEY="this-is-a-secret-key"
