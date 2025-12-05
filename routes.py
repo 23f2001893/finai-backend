@@ -152,4 +152,170 @@ def analyze_expenses():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/api/add-daily-expense", methods=["POST"])
+def add_expense():
+    data=request.get_json()
+    date=data.get("date")
+    category=data.get("category")
+    amount=data.get("amount")
+    username=data.get("username")
+    user=User.query.filter_by(username=username).first()
+    user_id=user.id
+    new_expense=DailyExpense(user_id=user_id,date=date,category=category,amount=amount)
+    db.session.add(new_expense)
+    db.session.commit()
+    new_id=new_expense.id
+    return jsonify({
+        "id":new_id,
+        "date":date,
+        "category":category,    
+        "amount":amount
+        
+    }),200
+@app.route("/api/delete-daily-expense/<int:expense_id>", methods=["DELETE"])
+def delete_expense(expense_id):
+    expense = DailyExpense.query.get(expense_id)
+    if not expense:
+        return jsonify({"message": "Expense not found"}), 404
+
+    db.session.delete(expense)
+    db.session.commit()
+    return jsonify({"message": "Expense deleted successfully"}), 200
+
+@app.route("/api/get-daily-expenses/<string:username>", methods=["GET"])
+def get_daily_expenses(username):       
+    user=User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    user_id=user.id
+    expenses=DailyExpense.query.filter_by(user_id=user_id).all()
+    expenses_list=[]
+    for expense in expenses:
+        expenses_list.append({
+            "id":expense.id,
+            "date":expense.date.strftime("%Y-%m-%d"),
+            "category":expense.category,
+            "amount":float(expense.amount)
+        })
+    return jsonify(expenses_list),200
+
+@app.route("/api/add-income", methods=["POST"])
+def add_income():
+    data=request.get_json()
+    month=data.get("month")
+    year=data.get("year")
+    amount=data.get("amount")
+    username=data.get("username")
+    user=User.query.filter_by(username=username).first()
+    user_id=user.id
+    new_income=Income(month=month,year=year,user_id=user_id,amount=amount)
+    db.session.add(new_income)
+    db.session.commit()
+    new_id=new_income.id
+    return jsonify({
+        "id":new_id,
+        "month":month,
+        "year":year,    
+        "amount":amount
+        
+    }),200
+@app.route("/api/get-incomes/<string:username>", methods=["GET"])
+def get_incomes(username):  
+    user=User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    user_id=user.id
+    incomes=Income.query.filter_by(user_id=user_id).all()
+    incomes_list=[]
+    for income in incomes:
+        incomes_list.append({
+            "id":income.id,
+            "month":income.month,
+            "year":income.year,
+            "amount":float(income.amount)
+        })
+    return jsonify(incomes_list),200
+@app.route("/api/add-monthly-expense", methods=["POST"])
+def add_monthly_expense():
+    data=request.get_json()
+    month=data.get("month")
+    year=data.get("year")
+    rent=data.get("rent",0.0)
+    emi=data.get("emi",0.0)
+    subscriptions=data.get("subscriptions",0.0)
+    others=data.get("others",0.0)
+    username=data.get("username")
+    user=User.query.filter_by(username=username).first()
+    user_id=user.id
+    new_expense=MonthlyExpense(user_id=user_id,month=month,year=year,rent=rent,emi=emi,subscriptions=subscriptions,others=others)
+    db.session.add(new_expense)
+    db.session.commit()
+    new_id=new_expense.id
+    return jsonify({
+        "id":new_id,
+        "month":month,
+        "year":year,    
+        "rent":rent,
+        "emi":emi,
+        "subscriptions":subscriptions,
+        "others":others
+        
+    }),200
+@app.route("/api/get-monthly-expenses/<string:username>", methods=["GET"])
+def get_monthly_expenses(username):
+    user=User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    user_id=user.id
+    expenses=MonthlyExpense.query.filter_by(user_id=user_id).all()
+    expenses_list=[]
+    for expense in expenses:
+        expenses_list.append({
+            "id":expense.id,
+            "month":expense.month,
+            "year":expense.year,
+            "rent":expense.rent,
+            "emi":expense.emi,
+            "subscriptions":expense.subscriptions,
+            "others":expense.others
+        })
+    return jsonify(expenses_list),200
+@app.route("/api/add-investment", methods=["POST"])
+def add_investment():
+    data=request.get_json()
+    amount=data.get("amount")
+    start_date=data.get("start_date")
+    tenure_months=data.get("tenure_months")
+     # Calculate end_date based on tenure_months
+    month = int(start_date.split("-")[1]) + tenure_months
+    year = int(start_date.split("-")[0]) + (month - 1) // 12
+    month = (month - 1) % 12 + 1
+    day = int(start_date.split("-")[2])
+    end_date = f"{year:04d}-{month:02d}-{day:02d}" 
+    kind=data.get("kind")
+    investment_type=data.get("investment_type")
+    roi=data.get("roi",0.0)
+    username=data.get("username")
+    user=User.query.filter_by(username=username).first()
+    user_id=user.id
+    new_investment=Investment(user_id=user_id,amount=amount,start_date=start_date,tenure_months=tenure_months,end_date=end_date,kind=kind,investment_type=investment_type,roi=roi)
+    db.session.add(new_investment)
+    db.session.commit()
+    new_id=new_investment.id
+    return jsonify({
+        "id":new_id,
+        "amount":amount,
+        "start_date":start_date,    
+        "tenure_months":tenure_months,
+        "end_date":end_date,
+        "kind":kind,
+        "investment_type":investment_type,
+        "roi":roi
+        
+    }),200
+            
+    
+    
+        
  

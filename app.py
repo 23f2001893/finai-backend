@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_migrate import Migrate
 from config import LocalDevelopmentConfig
 from database import db
 from models import *
@@ -25,6 +26,7 @@ def create_app():
     app.config.from_object(LocalDevelopmentConfig)
     db.init_app(app)
     jwt.init_app(app)
+    migrate = Migrate(app, db)
   
     app.app_context().push()
     return app
