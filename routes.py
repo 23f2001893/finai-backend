@@ -207,6 +207,7 @@ def get_daily_expenses():
 def add_monthly_expense():
     data=request.get_json()
     month=data.get("month")
+    income=data.get("income",0.0)
     year=data.get("year")
     rent=data.get("rent",0.0)
     emi=data.get("emi",0.0)
@@ -215,7 +216,7 @@ def add_monthly_expense():
     username=data.get("username")
     user=User.query.filter_by(username=username).first()
     user_id=user.id
-    new_expense=MonthlyExpense(user_id=user_id,month=month,year=year,rent=rent,emi=emi,subscriptions=subscriptions,others=others)
+    new_expense=MonthlyExpense(user_id=user_id,month=month,year=year,rent=rent,emi=emi,subscriptions=subscriptions,others=others,income=income)
     db.session.add(new_expense)
     db.session.commit()
     new_id=new_expense.id
