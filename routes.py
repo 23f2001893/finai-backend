@@ -183,8 +183,10 @@ def delete_expense(expense_id):
     db.session.commit()
     return jsonify({"message": "Expense deleted successfully"}), 200
 
-@app.route("/api/get-daily-expenses/<string:username>/<string:date>", methods=["GET"])
-def get_daily_expenses(username, date):       
+@app.route("/api/get-daily-expenses", methods=["GET"])
+def get_daily_expenses():
+    username=request.args.get("username")
+    date=request.args.get("date")   
     user=User.query.filter_by(username=username).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
