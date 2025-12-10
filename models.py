@@ -9,14 +9,7 @@ class User(db.Model):
     email=db.Column(db.String,unique=True)
     password=db.Column(db.String) 
     phone=db.Column(db.String)
-    pan=db.Column(db.String)
-class Income(db.Model):
-    id=db.Column(db.Integer,primary_key=True)
-    month=db.Column(db.String,nullable=False)
-    year=db.Column(db.String,nullable=False)
-    user_id=db.Column(db.Integer,db.ForeignKey('user.id'),nullable=False)
-    amount=db.Column(Numeric(12,2),nullable=False)  
-    user=db.relationship('User',backref=db.backref('incomes',lazy=True))    
+    pan=db.Column(db.String) 
 class DailyExpense(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     user_id=db.Column(db.Integer,db.ForeignKey('user.id'),nullable=False)
@@ -27,6 +20,7 @@ class DailyExpense(db.Model):
 class MonthlyExpense(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     user_id=db.Column(db.Integer,db.ForeignKey('user.id'),nullable=False)
+    income=db.Column(Numeric(12,2),default=0)
     month=db.Column(db.String,nullable=False)
     year=db.Column(db.String,nullable=False)
     rent=db.Column(db.Float,default=0.0)
