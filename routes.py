@@ -1,5 +1,7 @@
 from flask import current_app as app,jsonify,request,session
 from models import *
+from decimal import Decimal
+from sqlalchemy import func
 from flask_jwt_extended import create_access_token,current_user,jwt_required,get_jwt_identity
 from functools import wraps
 import google.generativeai as genai
@@ -279,7 +281,99 @@ def add_investment():
         "roi":roi
         
     }),200
-            
+
+@app.route("/api/monthly-summary", methods=["GET"])
+def monthly_summary():
+    username = request.args.get("username")
+    month_index = request.args.get("month")  # "0".."11"
+    year = request.args.get("year")          # string, e.g. "2025"
+
+    if not username or month_index is None or year is None:
+        return jsonify({"error": "username, month, and year are required"}), 400
+
+    # validate & convert
+    try:
+        month_index_int = int(month_index)   # 0..11
+        year_int = int(year)
+    except ValueError:
+        return jsonify({"error": "month and year must be integers"}), 400
+
+    if not (0 <= month_index_int <= 11):
+        return jsonify({"error": "month must be between 0 and 11"}), 400
+
+    # Postgres extract('month', date) is 1..12 → convert 0-based to 1-based
+    month_for_daily = month_index_int + 1    # 1..12
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # 1️⃣ MonthlyExpense: income + fixed expenses for that month_index/year
+    monthly = MonthlyExpense.query.filter_by(
+        user_id=user.id,
+        year=year,                 # stored as string
+        month=str(month_index_int) # stored as "0".."11"
+    ).first()
+
+    def to_float(x):
+        if x is None:
+            return 0.0
+        if isinstance(x, Decimal):
+            return float(x)
+        return float(x)
+
+    income = to_float(monthly.income) if monthly else 0.0
+    rent = to_float(monthly.rent) if monthly else 0.0
+    emi = to_float(monthly.emi) if monthly else 0.0
+    subscriptions = to_float(monthly.subscriptions) if monthly else 0.0
+    others_fixed = to_float(monthly.others) if monthly else 0.0
+
+    fixed_breakdown = {
+        "Rent": rent,
+        "EMI": emi,
+        "Subscriptions": subscriptions,
+        "Others (fixed)": others_fixed,
+    }
+    fixed_total = sum(fixed_breakdown.values())
+
+    # 2️⃣ DailyExpense: variable expenses grouped by category for that calendar month
+    variable_rows = (
+        db.session.query(
+            DailyExpense.category,
+            func.sum(DailyExpense.amount).label("total_amount")
+        )
+        .filter(
+            DailyExpense.user_id == user.id,
+            func.extract("year", DailyExpense.date) == year_int,
+            func.extract("month", DailyExpense.date) == month_for_daily,
+        )
+        .group_by(DailyExpense.category)
+        .all()
+    )
+
+    variable_breakdown = {
+        category: to_float(total_amount)
+        for category, total_amount in variable_rows
+    }
+    variable_total = sum(variable_breakdown.values())
+
+    # 3️⃣ Combine fixed + variable
+    breakdown = {**fixed_breakdown, **variable_breakdown}
+    total_expenses = fixed_total + variable_total
+    savings = income - total_expenses
+
+    return jsonify({
+        "username": username,
+        "year": year,
+        "month_index": month_index_int,          # 0..11
+        "month_for_daily": month_for_daily,      # 1..12 (for debugging)
+        "income": income,
+        "fixed_expenses_total": fixed_total,
+        "variable_expenses_total": variable_total,
+        "total_expenses": total_expenses,
+        "savings": savings,
+        "breakdown": breakdown,
+    }), 200            
     
     
         
