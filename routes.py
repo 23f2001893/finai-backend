@@ -188,8 +188,8 @@ def get_daily_expenses():
     username=request.args.get("username")
     date=request.args.get("date")   
     user=User.query.filter_by(username=username).first()
-    if not user:
-        return jsonify({"message": "User not found"}), 404
+    if not user or not date:
+        return jsonify({"message": "User or date not found"}), 404
     user_id=user.id
     expenses=DailyExpense.query.filter_by(user_id=user_id,date=date).all()
     expenses_list=[]
